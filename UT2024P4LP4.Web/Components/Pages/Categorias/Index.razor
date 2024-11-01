@@ -1,0 +1,153 @@
+﻿@rendermode InteractiveServer
+@attribute [StreamRendering]
+@page "/categorias"
+<h3>Categorias </h3>
+
+
+@*  @if (formAdd)
+{
+	<AddUpdate request="request" Salir="limpiar"></AddUpdate>
+} *@
+@if (formAdd)
+{
+	<div class="card">
+		<h5 class="card-header"> Categoria</h5>
+		<div class="mb-3">
+			<label for="descripcion" class="form-label">Descripción</label>
+			<input type="text" @bind-value="request.Descripcion" class="form-control" id="descripcion" rows="3" />
+		</div>
+		<button class=" btn btn-outline-secondary" @onclick="BtnEventClick">
+			@CurrentAction
+		</button>
+		<button class=" btn btn-outline-dark" @onclick="limpiar">Cancelar</button>
+
+
+	</div>
+
+}
+@if (!formAdd)
+{
+	<div class="card mb-3 mt-3">
+		<div class="card-header">
+			<span class="btn btn-success" @onclick="MostrarForm">+</span>
+		</div>
+		<div class="card-body">
+			<table class="table">
+				<thead>
+					<tr>
+						<th scope="col">#</th>
+						<th scope="col">Description</th>
+						<th scope="col">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					@if (Categorias.Count > 0)
+					{
+
+						<Virtualize Items="Categorias" Context="c">
+							<tr @key="c.Id">
+								<th>@c.Id</th>
+								<td>@c.Descripcion</td>
+								<td>
+									<div class="btn btn-group">
+										<button class="btn btn-outline-success" @onclick="()=>GoToUpdate(c)">Update</button>
+										<button class="btn btn-outline-danger" @onclick="()=>Eliminar(c.Id)">Eliminar</button>
+
+									</div>
+								</td>
+							</tr>
+						</Virtualize>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}
+
+
+
+
+
+
+@code {
+	public CategoriaRequest request { get; set; } = new CategoriaRequest();
+	public string message { get; set; } = "NA";
+	public string CurrentAction { get; set; } = "";
+
+	public bool formAdd { get; set; }
+
+	public List<CategoriaDto> Categorias { get; set; } = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		await this.CargarCategorias();
+	}
+
+	public void MostrarForm()
+	{
+		formAdd = true;
+		CurrentAction = Constants.Acciones.Registrar;
+	}
+
+	async Task CargarCategorias()
+	{
+		var r = await this.service.Get();
+		if (r.Succesd)
+		{
+			Categorias = r.Data?.ToList() ?? new List<CategoriaDto>();
+			StateHasChanged();
+		}
+	}
+
+	public async void BtnEventClick()
+	{
+		var r = request.Id == 0 ?
+			await service.Create(request) :
+			await service.Update(request);
+		if (r.Succesd)
+		{
+			await limpiar();
+		}
+
+
+	}
+
+	async Task limpiar()
+	{
+		request = new() { Descripcion = "" };
+		formAdd = false;
+
+		await this.CargarCategorias();
+
+	}
+
+
+	async Task Eliminar(int id)
+	{
+		this.CurrentAction = Constants.Acciones.Eliminar;
+
+		var r = await service.Delete(id);
+		if (r.Succesd)
+		{
+			await this.limpiar();
+		}
+
+	}
+
+	void GoToUpdate(CategoriaDto dto)
+	{
+		this.formAdd = true;
+		this.CurrentAction = Constants.Acciones.Modificar;
+		this.request = new()
+			{
+				Descripcion = dto.Descripcion,
+				Id = dto.Id
+			};
+	}
+
+
+
+
+
+}
+

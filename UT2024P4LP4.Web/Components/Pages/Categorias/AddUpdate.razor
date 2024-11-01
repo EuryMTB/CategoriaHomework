@@ -1,0 +1,45 @@
+﻿@rendermode InteractiveServer
+@attribute [StreamRendering]
+<div class="card">
+	<h5 class="card-header"> Categoria</h5>
+	<div class="mb-3">
+		<label for="descripcion" class="form-label">Descripción</label>
+		<input type="text" @bind-value="request.Descripcion" class="form-control" id="descripcion" rows="3" />
+	</div>
+	<button class=" btn btn-outline-secondary" @onclick="BtnEventClick">
+		@CurrentAction
+	</button>
+	<button class=" btn btn-outline-dark" @onclick="()=>Salir.InvokeAsync(false)">Cancelar</button>
+
+
+</div>
+
+@code {
+	[Parameter]
+	public required CategoriaRequest request { get; set; } = null!;
+
+	[Parameter]
+	public EventCallback<bool> Salir { get; set; }
+
+
+	public string CurrentAction { get; set; }
+
+
+	protected override void OnInitialized()
+	{
+		this.CurrentAction = request.Id == 0 ? "Agregar" : "Actualizar";
+	}
+	public async void BtnEventClick()
+	{
+		var r = request.Id == 0 ?
+			await service.Create(request) :
+			await service.Update(request);
+		if (r.Succesd)
+		{
+			await Salir.InvokeAsync(true);
+		}
+
+
+	}
+
+}
